@@ -1,0 +1,147 @@
+###############################################
+# Common Keys for all apps
+###############################################
+
+x-common-keys: &common-keys
+    restart: unless-stopped
+    logging:
+      driver: json-file
+    environment:
+      PUID: 1000
+      PGID: 1000
+      TZ: Europe/London
+
+services:
+###############################################
+# RADARR - Movies
+###############################################
+  radarr:
+    <<: *common-keys
+    container_name: radarr
+    network_mode: "service:gluetun"
+    image: ghcr.io/hotio/radarr:latest
+    
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /docker/appdata/radarr:/config
+      - /data:/data
+
+###############################################
+# SONARR - TV Shows
+###############################################
+
+  sonarr:
+    <<: *common-keys
+    container_name: sonarr
+    network_mode: "service:gluetun"
+    image: ghcr.io/hotio/sonarr:latest
+    
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /docker/appdata/sonarr:/config
+      - /data:/data
+
+###############################################
+# LIDARR - Music
+###############################################
+
+  lidarr:
+    <<: *common-keys
+    container_name: lidarr
+    network_mode: "service:gluetun"
+    image: ghcr.io/hotio/lidarr:latest
+    
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /docker/appdata/lidarr:/config
+      - /data:/data
+
+###############################################
+# BAZARR - Subtitles
+###############################################
+
+  bazarr:
+    <<: *common-keys
+    container_name: bazarr
+    network_mode: "service:gluetun"
+    image: ghcr.io/hotio/bazarr:latest
+    
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /docker/appdata/bazarr:/config
+      - /data/media:/data/media
+
+###############################################
+# PROWLARR - Indexer Manager
+###############################################
+
+  prowlarr:
+    <<: *common-keys
+    container_name: prowlarr
+    network_mode: "service:gluetun"
+    image: ghcr.io/hotio/prowlarr:latest
+    
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /docker/appdata/prowlarr:/config
+
+###############################################
+# QBITTORRENT - Downloader
+###############################################
+
+  qbittorrent:
+    <<: *common-keys
+    container_name: qbittorrent
+    network_mode: "service:gluetun"
+    image: ghcr.io/hotio/qbittorrent:latest
+    
+    environment:
+      - WEBUI_PORT=8080
+      - TORRENTING_PORT=6881
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /docker/appdata/qbittorrent:/config
+      - /data:/data
+
+###############################################
+# JELLYFIN - Media Server
+###############################################
+
+  jellyfin:
+    <<: *common-keys
+    container_name: jellyfin
+    image: ghcr.io/hotio/jellyfin:latest
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /docker/appdata/jellyfin:/config
+      - /data/media:/data/media:ro #read-only
+    ports:
+      - 8096:8096
+
+
+###############################################
+###############################################
+
+  gluetun:
+    image: qmcgaw/gluetun
+    container_name: gluetun
+    ports:
+      - 9696:9696 #prowlarr
+      - 7878:7878 #radarr
+      - 8989:8989 #sonarr
+      - 6767:6767 #bazarr
+      - 8686:8686 #lidarr
+      - 8080:8080 #qbittorrent
+      - 6881:6881 #qbittorrent
+      - 6881:6881/udp #qbittorrent
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    environment:
+      - VPN_SERVICE_PROVIDER=private internet access
+      - VPN_TYPE=openvpn # or wireguard
+      - OPENVPN_USER=
+      - OPENVPN_PASSWORD=
+      - SERVER_REGIONS=Switzerland
+    restart: unless-stopped
